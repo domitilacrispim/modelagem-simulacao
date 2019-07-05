@@ -59,6 +59,6 @@ while programa:
                         print("\nSIMULACAO",i,":----------------------------------------------------------------------------------------")
                         print("")
                         resultado.append(modelo_mm1.simulacao(i))
-         #       estatisticas.calculo_simulacoes(resultado, alfa)
+                estatisticas.calculo_simulacoes(resultado, alfa)
         else : 
                 print ("-> ERRO: Comando desconhecido\n")

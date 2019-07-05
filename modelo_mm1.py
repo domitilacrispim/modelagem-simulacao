@@ -37,7 +37,7 @@ variaveis_servico = ["expo", 1, 10, 3, 6, 9, 5]
 limite_fila = math.inf
 numero_eventos = 20
 tempos_servico = []
-
+tempo_ocioso2 = 0
 #Funcoes------------------------------------------------------------------------------------------#
 def evento_chegada(es1, es2,tf,tr,hc,hs1,hs2):
         #Variaveis------------------------------#
@@ -45,6 +45,7 @@ def evento_chegada(es1, es2,tf,tr,hc,hs1,hs2):
         global variaveis_servico
         global tempos_servico1
         global tempos_servico2
+        global tempo_ocioso2 
         
         tec = 0
         ts = 0
@@ -56,14 +57,13 @@ def evento_chegada(es1, es2,tf,tr,hc,hs1,hs2):
                 ts = numeros.geracao_tempo(variaveis_servico)
                 hs1 = tr + ts
                 tempos_servico1.append(ts)
-                if (es2==0):
-                        tempo_ocioso2=tempo_ocioso2+1
+                
         elif (es2==0):
                 es2=1                
                 ts = numeros.geracao_tempo(variaveis_servico)
-                hs1 = tr + ts
+                hs2 = tr + ts
                 tempos_servico2.append(ts)
-        
+                
         else:
                 tf = tf + 1
 
@@ -89,6 +89,20 @@ def evento_saida(es1, es2,tf,tr,hc,hs1, hs2):
                 else:
                         es1 = 0
                         hs1 = 999999
+        elif(hs1==hs2):
+                tr = hs1
+                #---------------------------------------#
+
+                if (tf > 0):
+                        tf = tf - 1
+                        ts = numeros.geracao_tempo(variaveis_servico)
+                        hs1 = tr + ts
+                        tempos_servico1.append(ts)
+                else:
+                        es1 = 0
+                        hs1 = 999999
+                        es2 = 0
+                        hs2 = 999999
         else:
                 tr = hs2
                 #---------------------------------------#
@@ -110,6 +124,7 @@ def simulacao(simu):
         global limite_fila
         global tempos_servico1
         global tempos_servico2
+        global tempo_ocioso2 
         i = 0
         es1 = 0
         es2 = 0                
@@ -126,7 +141,7 @@ def simulacao(simu):
         tempos_servico2 = []
         tempos_espera = []
         numeros.iniciar_seed = True
-        tabela1 = PrettyTable(['simulacao '+str(simu), 'ES1', 'ES2', 'TF', 'TR', 'HC', 'HS1', 'HS1'])
+        tabela1 = PrettyTable(['simulacao '+str(simu), 'ES1', 'ES2', 'TF', 'TR', 'HC', 'HS1', 'HS2'])
         #---------------------------------------#
 
         numeros.print_variaveis()
@@ -142,17 +157,20 @@ def simulacao(simu):
                 else:
                         #Processamento de Evento de Saida
                         if(pessoas_na_fila > 0): #Deve-se primeiro tratar uma pessoa da fila antes de gerar outro evento de saida
-                                tempos_espera[pessoa] = hs - tempos_espera[pessoa] #Calcula a diferenca entre a entrada e a saida da pessoa
-                                #Com a diferenca calculada tem-se o tempo de espera da pessoa
+                                if (hs2>=hs1):
+                                        tempos_espera[pessoa] = hs1 - tempos_espera[pessoa] #Calcula a diferenca entre a entrada e a saida da pessoa
+                                else:
+                                        tempos_espera[pessoa] = hs2 - tempos_espera[pessoa] #Calcula a diferenca entre a entrada e a saida da pessoa
+                                                                        
+                                        #Com a diferenca calculada tem-se o tempo de espera da pessoa
                                 pessoa = pessoa + 1 #Muda para fazer o calculo para a proxima pessoa que sair
                                 pessoas_na_fila = pessoas_na_fila - 1
                         es1, es2,tf,tr,hc,hs1, hs2 = evento_saida(es1, es2,tf,tr,hc,hs1, hs2)
 
                 if (tf == 0): #Se a fila estiver vazia
                         tempo_ocioso1 += hc - tr #Adiciona-se o tempo ate a proxima chegada como ocioso
-                        tempo_ocioso2 += hc - tr #Adiciona-se o tempo ate a proxima chegada como ocioso
-
-                tabela1.add_row([i, es1, es1, tf, tr, hc, hs1, hs2])
+                              
+                tabela1.add_row([i, es1, es2, tf, tr, hc, hs1, hs2])
                 
                 i = i + 1
 
@@ -161,8 +179,9 @@ def simulacao(simu):
         for i in range(pessoa,len(tempos_espera)):
                 tempos_espera[i] = tr - tempos_espera[i]
         tempos_espera = [x for x in tempos_espera if x > 0]
-
-       # return estatisticas.resultados(tr, tempos_servico1, tempos_servico2, tempos_espera, tempo_ocioso)
+        tempo_ocioso2=tr-sum(tempos_servico2)
+        tempo_ocioso1=tr-sum(tempos_servico1)
+        return estatisticas.resultados(tr, tempos_servico1, tempos_servico2, tempos_espera, tempo_ocioso1, tempo_ocioso2)
 
 def set_variaveis_globais(lf, ne):
         #Variaveis------------------------------#
@@ -213,6 +232,7 @@ def print_variaveis_servico():
         tabela1 = PrettyTable(['Tipo de Dist.', 'Lambda (Expo)', 'Media (Norm)', 'Desvio P. (Norm)', 'Inf. (Unif)', 'Sup. (Unif)', 'Temp. (Deter)'])
         tabela1.add_row([variaveis_servico[0],variaveis_servico[1],variaveis_servico[2],variaveis_servico[3],variaveis_servico[4],variaveis_servico[5],variaveis_servico[6]])
         print (tabela1)
+
 
 
 
